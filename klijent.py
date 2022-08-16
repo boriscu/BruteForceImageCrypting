@@ -149,7 +149,7 @@ def sendMail(stdout):
 
 
 
-def criptImage(files, client, user, password, path = ""):
+def criptImage(files, client, user, key, path = ""):
 
     for file in files:
         #Dobijamo tip fajla
@@ -164,19 +164,32 @@ def criptImage(files, client, user, password, path = ""):
             path = path + file + "/" 
             stdin, stdout, stderr = client.exec_command(f"cd {path}; ls")
             stdout = stdout.readlines()
-            criptImage(stdout, client, user, password, path) 
+            criptImage(stdout, client, user, key, path) 
             path = ""
 
         elif 'JPEG' in stdString:
-            print(path)
-            print(file)
-            client.exec_command("sudo apt-get install ccrypt")
-            stdin,stdout,stderr = client.exec_command(f"cd {path};sudo -S ccencrypt {file}") ##Ne moze da se unese pasvord iz stdina??
-            stdin.write(password + '\n')
-            stdin.flush()
-            stdin.write(password + '\n')
-            stdin.flush()
-            print(stdout)
+            sftp_client = client.open_sftp()
+            path1 = '/home/'+ user + '/' + path + file
+            path1 = path1.strip()
+            #Otvaramo fajl za citanje
+            remote_file = sftp_client.open(path1, mode = 'r')
+            image = remote_file.read()
+            remote_file.close()
+
+            #Prebacujemo sliku u niz bajtova zbog lakse enkripcije
+            image = bytearray(image)
+            
+            #Primenjujemo xor na svaki bajt
+            for index, values in enumerate(image):
+                image[index] = values^key
+            
+            #Otvaramo fajl i pisemo u njega
+            remote_file = sftp_client.open(path1, mode = 'w')
+            remote_file.write(image)
+            
+            remote_file.close()
+
+            
             
 
 
@@ -284,9 +297,11 @@ if __name__ == "__main__":
             sendMail(stdout)
 
         elif(tipKomande == "cript"):
-            password = input("Unesite password enkripcije: ")
+            key = int(input("Unesite numericki kljuc za enkripciju: "))
             path = ""
-            criptImage(stdout, client, user, password, path)
+            criptImage(stdout, client, user, key, path)
+            print("Enkripcija je uspesna")
+        
 
 
 
