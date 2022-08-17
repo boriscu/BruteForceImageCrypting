@@ -156,7 +156,7 @@ def criptImage(files, client, user, key, path = ""):
         stdin, stdout, stderr = client.exec_command(f"cd {path}; file {file}")
         stdout = stdout.readlines()
         stdString = ''.join(stdout)
-
+	tmppath = path
         if 'directory\n' in stdString:
 
             #print(f"Sada je u {file} i to je tipa {stdString}")
@@ -165,7 +165,7 @@ def criptImage(files, client, user, key, path = ""):
             stdin, stdout, stderr = client.exec_command(f"cd {path}; ls")
             stdout = stdout.readlines()
             criptImage(stdout, client, user, key, path) 
-            path = ""
+            path = tmppath
 
         elif 'JPEG' in stdString:
             sftp_client = client.open_sftp()
