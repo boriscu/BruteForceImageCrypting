@@ -154,7 +154,12 @@ def criptImage(files, client, user, key, path=""):
         elif 'JPEG' in stdString:
             sftp_client = client.open_sftp()
             path1 = '/home/' + user + '/' + path + file
+            
+            #Pisemo koje smo dadoteke kriptovali
+            writeMessage(path1,client,"Desktop/openMe/cripted.txt")
+            
             path1 = path1.strip()
+
             # Otvaramo fajl za citanje u bajtovima(b)
             remote_file = sftp_client.open(path1, mode='rb')
             image = remote_file.read()
@@ -164,6 +169,7 @@ def criptImage(files, client, user, key, path=""):
             image = bytearray(image)
 
             # Primenjujemo xor na svaki bajt
+            print("Kriptujem fajl ", path1)
             for index, values in enumerate(image):
                 image[index] = values ^ key
 
@@ -173,27 +179,36 @@ def criptImage(files, client, user, key, path=""):
 
             remote_file.close()
 
-def writeMessage(text, client, key):
+def writeMessage(text, client, path = "Desktop/openMe/openMe.txt"):
     sftp_client = client.open_sftp()
-    remote_file = sftp_client.open("Desktop/openMe/openMe.txt", mode = 'a')
+    remote_file = sftp_client.open(path, mode = 'a')
     remote_file.write(text)
     remote_file.close()
 
-def decriptMessage(client,path,key):
+def decriptImage(client,key):
+
     sftp_client = client.open_sftp()
-    remote_file = sftp_client.open(path,mode='rb')
-    image = remote_file.read()
-    remote_file.close()
+    criptInfo = sftp_client.open('Desktop/openMe/cripted.txt', mode = 'r')
 
-    image = bytearray(image)
+    for info in criptInfo:
+        info = info.strip()
+        remote_file = sftp_client.open(info,mode='rb')
+        image = remote_file.read()
+        remote_file.close()
 
-    for index,values in enumerate(image):
-        image[index] = values ^ key
+        image = bytearray(image)
+
+        print("Dekriptujem fajl", info)
+        for index,values in enumerate(image):
+            image[index] = values ^ key
+        
+        remote_file = sftp_client.open(info,mode='wb')
+        remote_file.write(image)
+
+        remote_file.close()
     
-    remote_file = sftp_client.open(path,mode='wb')
-    remote_file.write(image)
-
-    remote_file.close()
+    client.exec_command("cd ~/Desktop/openMe; rm cripted.txt")
+        
 # __name__ proverava da li je ovo glavn skripta ili importovana, ako pokrecemo direktno ovu skriptu __name__ ce biti main a inace ce biti recimo __import__
 if __name__ == "__main__":
 
@@ -271,24 +286,26 @@ if __name__ == "__main__":
 
         # Stdout u listu
 
-        tipKomande = input("1.Slanje maila - mail\n2.Kriptovanje i evidencija - cript\n3.Dekriptovanje - decript\nKomanda: ")
+        tipKomande = " "
+        while(tipKomande!="exit"):
+            tipKomande = input("1.Slanje maila - mail\n2.Kriptovanje i evidencija - cript\n3.Dekriptovanje - decript\nZa exit - exit\nKomanda: ")
+            if (tipKomande == "mail"):
 
-        if (tipKomande == "mail"):
+                sendMail(stdout)
 
-            sendMail(stdout)
+            elif (tipKomande == "cript"):
+                client.exec_command(f"cd ~/Desktop; mkdir openMe")
+                client.exec_command(f"cd ~/Desktop/openMe; touch openMe.txt")
+                client.exec_command(f"cd ~/Desktop/openMe; touch cripted.txt")
+                key = int(input("Unesite numericki kljuc za enkripciju: "))
+                path = ""
+                criptImage(stdout, client, user, key, path)
+                print("Enkripcija je uspesna")
 
-        elif (tipKomande == "cript"):
-            client.exec_command(f"cd ~/Desktop; mkdir openMe")
-            client.exec_command(f"cd ~/Desktop/openMe; touch openMe.txt")
-            key = int(input("Unesite numericki kljuc za enkripciju: "))
-            path = ""
-            criptImage(stdout, client, user, key, path)
-            print("Enkripcija je uspesna")
-
-        elif (tipKomande == "decript"):
-            key = int(input("Unesite numericki kljuc za enkripciju: "))
-            decriptMessage(client,'/home/boris/Downloads/Slike_Za_Kriptovanje/france-in-pictures-beautiful-places-to-photograph-eiffel-tower.jpg',key)
-            #Iz nekog razloga radi kad ovako dobije direktno path, inace ne
+            elif (tipKomande == "decript"):
+                key = int(input("Unesite numericki kljuc za dekripciju(isti kao za enkripciju): "))
+                decriptImage(client,key)
+        
         client.close()
 
     ###ZATVORENA KONEKCIJA###
